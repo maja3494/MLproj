@@ -7,45 +7,42 @@ import matplotlib.pyplot as plt
 
 
 class SnoTelDataRetriever:
-    def __init__(self, wsdl_url):
+    def __init__(self):
         self.date_str = '%Y-%m-%d'
         self.client = zeep.Client('https://wcc.sc.egov.usda.gov/awdbWebService/services?WSDL')
 
-    def get_all_stations_trips(self, state_codes=['CO'], network_codes=['SNTL'], county_names=None, station_ids=None):
+    def get_all_stations(self, state_codes='CO', network_codes='SNTL', county_names=None, station_ids=None):
         """
 
-        :param state_codes:
-        :param network_codes:
-        :param county_names:
+        :param state_codes: list - optional
+        :param network_codes: list - optional
+        :param county_names: list - optional
+        :param station_ids: list - optional
         :return: list of str with the format [station id]:[state code]:[network code] i.e "302:OR:SNTL"
         """
         # https://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm#getStations
         return self.client.service.getStations(logicalAnd=True, stateCds=state_codes, networkCds=network_codes, countyNames=county_names, stationIds=station_ids)
 
-    def get_all_stations_metadata(self, state_codes=['CO'], network_codes=['SNTL'], county_names=None):
+    def get_metadata_from_trips(self, stations_trips):
         """
 
-        :param state_codes:
-        :param network_codes:
-        :param county_names:
-        :return: metadate
+        :param stations_trips:
+        :return: metadata
         """
-        # https://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm#getStations
-        all_station_trips = self.client.service.getStations(logicalAnd=True, stateCds=state_codes, networkCds=network_codes, countyNames=county_names)
-
         # https://www.wcc.nrcs.usda.gov/web_service/AWDB_Web_Service_Reference.htm#getStationMetadata
-        all_station_metadata = [self.client.service.getStationMetadata(stationTriplet=st_trip) for st_trip in all_station_trips]
+        all_station_metadata = self.client.service.getStationMetadataMultiple(stationTriplets=stations_trips)
 
         return all_station_metadata
 
-    def get_all_counties(self, state_codes=['CO'], network_codes=['SNTL']):
+    def get_all_counties(self, state_codes='CO', network_codes='SNTL'):
         """
 
         :param state_codes:
         :param network_codes:
         :return: list of all available counties with given state_codes and network_codes
         """
-        all_station_metadata = self.get_all_stations_metadata(state_codes, network_codes)
+        all_station = self.get_all_stations(state_codes, network_codes)
+        all_station_metadata = self.get_stations_metadata_from_trips(all_station)
 
         county_names = list(np.unique([mdat.countyName for mdat in all_station_metadata]))
 
@@ -75,27 +72,26 @@ if __name__ == "__main__":
     # this example will get snow water equivalent data for the past year from all SnoTel stations in clear creak county
     # and plot it
 
-    stdr = SnoTelDataRetriever('https://wcc.sc.egov.usda.gov/awdbWebService/services?WSDL')
+    stdr = SnoTelDataRetriever()
 
     # all_station_counties = stdr.get_all_counties()
     # print(all_station_counties)  # for CO: ['Archuleta', 'Boulder', 'Chaffee', 'Clear Creek', 'Conejos', 'Costilla', 'Custer', 'Delta', 'Dolores', 'Eagle', 'Garfield', 'Gilpin', 'Grand', 'Gunnison', 'Hinsdale', 'Huerfano', 'Jackson', 'La Plata', 'Lake', 'Larimer', 'Las Animas', 'Mesa', 'Mineral', 'Montezuma', 'Montrose', 'Ouray', 'Park', 'Pitkin', 'Rio Blanco', 'Rio Grande', 'Routt', 'Saguache', 'San Juan', 'San Miguel', 'Summit', 'Teller']
 
-    sntl_stations = stdr.get_all_stations_trips(county_names=['Clear Creek'])  # station_ids=['936', '935', '602']
+    sntl_stations = stdr.get_all_stations(county_names=['Clear Creek'])  # station_ids=['936', '935', '602']
+    sntl_stations_metadata = stdr.get_metadata_from_trips(sntl_stations)
 
     end = datetime.now()
-    start = datetime.now()-relativedelta(years=1)
+    start = datetime.now()-relativedelta(years=2)
 
     sntl_stations_data = stdr.get_snow_water_eq_data(sntl_stations, start, end)
 
     fig, ax = plt.subplots(1, 1)
-    for station in sntl_stations_data:
+    for i, station in enumerate(sntl_stations_data):
         times = np.asarray(pd.to_datetime(np.linspace(pd.Timestamp(station.beginDate).value,
                                                       pd.Timestamp(station.endDate).value, len(station.values))))
-        ax.plot(times, station.values, label=station.stationTriplet)
-        # ax.set_xticks(np.arange(len(station.values)))
-        # ax.set_xticklabels(times, rotation='vertical')
+        ax.plot(times, station.values, label=f"{station.stationTriplet} ({sntl_stations_metadata[i].name})")
 
-    ax.set_title(f"{sntl_stations_data[0].beginDate[:10]} to {sntl_stations_data[0].endDate[:10]}")
+    ax.set_title(f"Snow water Eq in Clear Creek County ({sntl_stations_data[0].beginDate[:10]} to {sntl_stations_data[0].endDate[:10]})")
     ax.set_ylabel("Snow water Eq (in)")
     ax.set_xlabel("Time")
 
