@@ -1,2 +1,5 @@
 .idea/
 snotel_data/
+dataset/
+__pycache__/
+
