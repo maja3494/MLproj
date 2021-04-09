@@ -138,7 +138,7 @@ def read_all_sno_water_eq_data(dataset_path, station_ids):
 
 
 if __name__ == "__main__":
-    if True:
+    if False:
         # will build dataset, read from dataset and then plot
         # this line only needs to be run once
         data = build_sno_water_eq_dataset(['838', '663'], '1960', '2020', '08-01')
@@ -198,3 +198,56 @@ if __name__ == "__main__":
 
         plt.legend()
         plt.show()
+
+    ####################################################################################################################
+
+    if True:
+        stdr = SnoTelDataRetriever()
+
+        all_station_counties = stdr.get_all_counties()
+        #print("Select County:\n", list(enumerate(all_station_counties)))  # for CO: ['Archuleta', 'Boulder', 'Chaffee', 'Clear Creek', 'Conejos', 'Costilla', 'Custer', 'Delta', 'Dolores', 'Eagle', 'Garfield', 'Gilpin', 'Grand', 'Gunnison', 'Hinsdale', 'Huerfano', 'Jackson', 'La Plata', 'Lake', 'Larimer', 'Las Animas', 'Mesa', 'Mineral', 'Montezuma', 'Montrose', 'Ouray', 'Park', 'Pitkin', 'Rio Blanco', 'Rio Grande', 'Routt', 'Saguache', 'San Juan', 'San Miguel', 'Summit', 'Teller']
+        #county_num = int(input(f"Counties: {list(enumerate(all_station_counties))}\nSelect number: "))
+
+        for county_name in all_station_counties:
+            sntl_stations = stdr.get_all_stations(county_names=[county_name])
+            print("county_name:", county_name, "sntl_stations:", [sntl_station.split(':')[0] for sntl_station in sntl_stations])
+
+            """
+            county_name: Archuleta sntl_stations: ['1160']
+            county_name: Boulder sntl_stations: ['412', '663', '1251', '838', '1042']
+            county_name: Chaffee sntl_stations: ['1100']
+            county_name: Clear Creek sntl_stations: ['936', '935', '602']
+            county_name: Conejos sntl_stations: ['431', '580']
+            county_name: Costilla sntl_stations: ['430', '829', '1005']
+            county_name: Custer sntl_stations: ['773']
+            county_name: Delta sntl_stations: ['675', '682']
+            county_name: Dolores sntl_stations: ['1185', '465', '586', '739']
+            county_name: Eagle sntl_stations: ['1041', '1040', '842']
+            county_name: Garfield sntl_stations: ['345', '827']
+            county_name: Gilpin sntl_stations: ['564']
+            county_name: Grand sntl_stations: ['1030', '305', '335', '913', '1186', '1187', '970', '565', '1014', '688', '793', '869']
+            county_name: Gunnison sntl_stations: ['380', '669', '680', '701', '737', '1141']
+            county_name: Hinsdale sntl_stations: ['762', '839', '1188']
+            county_name: Huerfano sntl_stations: ['303']
+            county_name: Jackson sntl_stations: ['408', '1031', '1032', '1033']
+            county_name: La Plata sntl_stations: ['904', '843']
+            county_name: Lake sntl_stations: ['369']
+            county_name: Larimer sntl_stations: ['322', '1161', '438', '1122', '551', '1123', '718', '870']
+            county_name: Las Animas sntl_stations: ['857']
+            county_name: Mesa sntl_stations: ['622']
+            county_name: Mineral sntl_stations: ['327', '624', '840', '874']
+            county_name: Montezuma sntl_stations: ['905', '1060']
+            county_name: Montrose sntl_stations: ['409']
+            county_name: Ouray sntl_stations: ['538']
+            county_name: Park sntl_stations: ['938', '937', '939']
+            county_name: Pitkin sntl_stations: ['1101', '542', '547', '556', '618', '658']
+            county_name: Rio Blanco sntl_stations: ['378', '426', '717']
+            county_name: Rio Grande sntl_stations: ['1058']
+            county_name: Routt sntl_stations: ['1061', '457', '467', '1252', '940', '607', '709', '825']
+            county_name: Saguache sntl_stations: ['1059', '1102', '914', '1124', '1128']
+            county_name: San Juan sntl_stations: ['386', '387', '629', '632', '713', '780', '797']
+            county_name: San Miguel sntl_stations: ['589']
+            county_name: Summit sntl_stations: ['415', '1120', '485', '505', '531', '802']
+            county_name: Teller sntl_stations: ['1057']
+            """
+
