@@ -74,12 +74,9 @@ class SnoTelDataRetriever:
         return data
 
 
-def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_water_year, out_path):
+def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_water_year):
     if isinstance(station_ids, str):
         station_ids = [station_ids]
-
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
 
     stdr = SnoTelDataRetriever()
     sntl_stations = stdr.get_all_stations(station_ids=station_ids)
@@ -102,15 +99,7 @@ def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_
 
     start_time = max(start_dates)
 
-    dir_paths = []
-    for i, station in enumerate(sntl_stations):
-        #dir_path = os.path.join(out_path, f"{station_names[i]} ({station_ids[i]})")
-        dir_path = os.path.join(out_path, f"{station_ids[i]}")
-
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-
-        dir_paths.append(dir_path)
+    station_dataset = [[] for _ in range(len(sntl_stations))]
 
     # todo: should we out all data into the same file
     datas = [None for _ in range(len(sntl_stations))]
@@ -126,15 +115,14 @@ def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_
             # times = [str(time_v)[:10] for time_v in times]
 
             data = sntl_data[i].values
-            file_path = os.path.join(dir_paths[i], f"{this_start_time.strftime('%Y%m%d')}-{this_end_date.strftime('%Y%m%d')}.csv")
 
             row_list = [("i", "date", "value")] + list(zip(range(len(sntl_data[i].values)), times, data))
 
-            with open(file_path, 'w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerows(row_list)
+            station_dataset[i].append((this_start_time, this_end_date, row_list))
 
         this_start_time = this_end_date
+
+    return station_dataset
 
 
 def read_all_sno_water_eq_data(dataset_path, station_ids):
@@ -153,7 +141,9 @@ if __name__ == "__main__":
     if True:
         # will build dataset, read from dataset and then plot
         # this line only needs to be run once
-        build_sno_water_eq_dataset(['838', '663'], '1960', '2020', '08-01', 'snotel_data')
+        data = build_sno_water_eq_dataset(['838', '663'], '1960', '2020', '08-01')
+
+        # todo save to csv: the next line doesn't work anymore
 
         station_name, dataset_data = read_all_sno_water_eq_data('snotel_data', ['838', '663'])[0]
 
