@@ -153,7 +153,7 @@ if __name__ == "__main__":
     if True:
         # will build dataset, read from dataset and then plot
         # this line only needs to be run once
-        build_sno_water_eq_dataset(['838', '663'], '2010', '2020', '08-01', 'snotel_data')
+        build_sno_water_eq_dataset(['838', '663'], '1960', '2020', '08-01', 'snotel_data')
 
         station_name, dataset_data = read_all_sno_water_eq_data('snotel_data', ['838', '663'])[0]
 
