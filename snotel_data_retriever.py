@@ -146,9 +146,12 @@ if __name__ == "__main__":
     if True:
         # run build_dataset first
 
-        station_name, dataset_data = read_all_sno_water_eq_data('dataset', 'Boulder Creek', ['838', '663'])[0]
+        all_data = read_all_sno_water_eq_data('dataset', 'Boulder Creek', ['838', '663'])
 
         fig, ax = plt.subplots(1, 1)
+
+        station_name, dataset_data = all_data[0]
+
         for file, data in dataset_data[-4:-1]:
             ax.plot(np.arange(len(data['value'])), data['value'], '-', label=f"{file[:4]}-{file[9:13]}")
 
@@ -160,6 +163,23 @@ if __name__ == "__main__":
         ax.set_xticklabels(pd.DatetimeIndex(dataset_data[-2][1]['date']).strftime('%m/%d')[np.arange(0,len(dataset_data[-2][1]['date']),35)])
 
         ax.set_title(f"Snow water Eq for station {station_name} (near Nederland)")
+        ax.set_ylabel("Snow water Eq (in)")
+        ax.set_xlabel("Time")
+
+        plt.legend()
+        plt.show()
+
+        fig, ax = plt.subplots(1, 1)
+        for station_name, station_data in all_data:
+            file, data = station_data[-2]
+            ax.plot(np.arange(len(data['value'])), data['value'], '-', label=f"{station_name}")
+
+        ax.set_xticks(np.arange(0, len(all_data[1][1][-2][1]['date']), 35))
+        # TODO: to str
+        ax.set_xticklabels(pd.DatetimeIndex(all_data[1][1][-2][1]['date']).strftime('%m/%d')[
+                               np.arange(0, len(all_data[1][1][-2][1]['date']), 35)])
+
+        ax.set_title(f"Snow water Eq near Nederland for {all_data[1][1][-2][0][:4]}-{all_data[1][1][-2][0][9:13]}")
         ax.set_ylabel("Snow water Eq (in)")
         ax.set_xlabel("Time")
 
