@@ -18,26 +18,38 @@ class DatasetBuilder():
         if not os.path.exists(out_path):
             os.makedirs(out_path)
 
-        for basin_name, snotel_site_ids, river_gadge_ids in station_combos:
+        for basin_name, snotel_site_ids, river_gauge_ids in station_combos:
             dir_path = os.path.join(out_path, basin_name)
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
 
             snotel_data = build_sno_water_eq_dataset(snotel_site_ids, begin_year, end_year, start_of_snow_year)
-            river_gadge_data = []
+            river_gauge_data = []
+
+            snotel_dir_path = os.path.join(dir_path, 'snotel')
+            river_gauge_dir_path = os.path.join(dir_path, 'water_gauge')
+            if not os.path.exists(snotel_dir_path):
+                os.makedirs(snotel_dir_path)
+            if not os.path.exists(river_gauge_dir_path):
+                os.makedirs(river_gauge_dir_path)
 
             for i, snotel_cite_data in enumerate(snotel_data):
                 snotel_id = snotel_site_ids[i]
+
+                site_dir_path = os.path.join(snotel_dir_path, str(snotel_id))
+                if not os.path.exists(site_dir_path):
+                    os.makedirs(site_dir_path)
+
                 for start_time, end_date, snotel_csv_row_data in snotel_cite_data:
-                    file_path = os.path.join(dir_path,
-                            f"snotel-{snotel_id}-{start_time.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}.csv")
+                    file_path = os.path.join(site_dir_path,
+                            f"{start_time.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}.csv")
 
                     with open(file_path, 'w', newline='') as fw:
                         csv_fw = csv.writer(fw)
                         csv_fw.writerows(snotel_csv_row_data)
 
-            for i, river_gadge_cite_data in enumerate(river_gadge_data):
-                river_gadge = river_gadge_ids[i]
+            for i, river_gauge_cite_data in enumerate(river_gauge_data):
+                river_gauge = river_gauge_ids[i]
 
                 pass  # TODO
 

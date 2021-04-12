@@ -125,39 +125,43 @@ def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_
     return station_dataset
 
 
-def read_all_sno_water_eq_data(dataset_path, station_ids):
-    full_dataset = []
-    sub_dirs = [d for d in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, d))]
+def read_all_sno_water_eq_data(dataset_path, basin_name, station_ids):
+    root_path = os.path.join(dataset_path, basin_name, 'snotel')
+    assert os.path.exists(root_path)
+
+    sub_dirs = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, d))]
     sub_dirs = [d for d in sub_dirs if d in station_ids]
+
+    full_dataset = []
+
     for sub_dir in sub_dirs:
-        data_files = [d for d in os.listdir(os.path.join(dataset_path, sub_dir)) if os.path.splitext(d)[1] == '.csv']
-        data = [(data_file, pd.read_csv(os.path.join(dataset_path, sub_dir, data_file))) for data_file in data_files]
+        data_files = [d for d in os.listdir(os.path.join(root_path, sub_dir)) if os.path.splitext(d)[1] == '.csv']
+        data = [(data_file, pd.read_csv(os.path.join(root_path, sub_dir, data_file))) for data_file in data_files]
         full_dataset.append((sub_dir, data))
 
     return full_dataset
 
 
 if __name__ == "__main__":
-    if False:
-        # will build dataset, read from dataset and then plot
-        # this line only needs to be run once
-        data = build_sno_water_eq_dataset(['838', '663'], '1960', '2020', '08-01')
+    if True:
+        # run build_dataset first
 
-        # todo save to csv: the next line doesn't work anymore
-
-        station_name, dataset_data = read_all_sno_water_eq_data('snotel_data', ['838', '663'])[0]
+        station_name, dataset_data = read_all_sno_water_eq_data('dataset', 'Boulder Creek', ['838', '663'])[0]
 
         fig, ax = plt.subplots(1, 1)
-        for file, data in dataset_data[:-1]:
-            # pd.DatetimeIndex(data['date']).year  # gets years of each value
-            ax.plot(np.arange(len(data['value'])), data['value'], '-', label=file)
+        for file, data in dataset_data[-4:-1]:
+            ax.plot(np.arange(len(data['value'])), data['value'], '-', label=f"{file[:4]}-{file[9:13]}")
 
-        ax.plot(np.arange(len(dataset_data[-1][1]['value'])), dataset_data[-1][1]['value'].values, '-', label=dataset_data[-1][0], linewidth=3.0)
+        ax.plot(np.arange(len(dataset_data[-1][1]['value'])), dataset_data[-1][1]['value'].values, '-',
+                label=f"{dataset_data[-1][0][:4]}-{dataset_data[-1][0][9:13]}", linewidth=3.0)
 
-        ax.set_title(f"Snow water Eq for {station_name}")
+        ax.set_xticks(np.arange(0,len(dataset_data[-2][1]['date']),35))
+        # TODO: to str
+        ax.set_xticklabels(pd.DatetimeIndex(dataset_data[-2][1]['date']).strftime('%m/%d')[np.arange(0,len(dataset_data[-2][1]['date']),35)])
+
+        ax.set_title(f"Snow water Eq for station {station_name} (near Nederland)")
         ax.set_ylabel("Snow water Eq (in)")
         ax.set_xlabel("Time")
-        #ax.xaxis.set_major_formatter(DateFormatter('%m/%d/%y'))
 
         plt.legend()
         plt.show()
@@ -201,7 +205,7 @@ if __name__ == "__main__":
 
     ####################################################################################################################
 
-    if True:
+    if False:
         stdr = SnoTelDataRetriever()
 
         all_station_counties = stdr.get_all_counties()
