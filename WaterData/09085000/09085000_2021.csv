@@ -1,0 +1,48 @@
+#
+#
+# US Geological Survey, Water Resources Data
+# retrieved: 2021-04-13 19:40:40 -04:00	(natwebcaas01)
+#
+# This file contains USGS Daily Statistics
+#
+# Note:The statistics generated are based on approved daily-mean data and may not match those published by the USGS in official publications.
+# The user is responsible for assessment and use of statistics from this site.
+# For more details on why the statistics may not match, visit http://help.waterdata.usgs.gov/faq/about-statistics.
+#
+# Data heading explanations.
+# agency_cd       -- agency code
+# site_no         -- Site identification number
+# parameter_cd    -- Parameter code
+# station_nm      -- Site name
+# loc_web_ds      -- Additional measurement description
+#
+# Data for the following 1 site(s) are contained in this file
+# agency_cd   site_no      parameter_cd   station_nm (loc_web_ds)
+# USGS        09085000     00060          ROARING FORK RIVER AT GLENWOOD SPRINGS, CO.
+#
+# Explanation of Parameter Codes
+# parameter_cd	Parameter Name
+# 00060         Discharge, cubic feet per second
+#
+# Data heading explanations.
+# month_nu    ... The month for which the statistics apply.
+# day_nu      ... The day for which the statistics apply.
+# begin_yr    ... First water year of data of daily mean values for this day.
+# end_yr      ... Last water year of data of daily mean values for this day.
+# count_nu    ... Number of values used in the calculation.
+# mean_va     ... Mean of daily mean values for this day.
+#
+agency_cd	site_no	parameter_cd	ts_id	loc_web_ds	month_nu	day_nu	begin_yr	end_yr	count_nu	mean_va
+5s	15s	5s	10n	15s	3n	3n	6n	6n	8n	12s
+USGS	09085000	00060	18719		1	1	2021	2021	1	348
+USGS	09085000	00060	18719		1	2	2021	2021	1	341
+USGS	09085000	00060	18719		1	3	2021	2021	1	339
+USGS	09085000	00060	18719		1	4	2021	2021	1	373
+USGS	09085000	00060	18719		1	5	2021	2021	1	393
+USGS	09085000	00060	18719		1	6	2021	2021	1	364
+USGS	09085000	00060	18719		1	7	2021	2021	1	341
+USGS	09085000	00060	18719		1	8	2021	2021	1	330
+USGS	09085000	00060	18719		1	9	2021	2021	1	353
+USGS	09085000	00060	18719		1	10	2021	2021	1	338
+USGS	09085000	00060	18719		1	11	2021	2021	1	294
+USGS	09085000	00060	18719		1	12	2021	2021	1	284

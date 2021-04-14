@@ -1,0 +1,89 @@
+#
+#
+# US Geological Survey, Water Resources Data
+# retrieved: 2021-04-13 19:40:23 -04:00	(natwebcaas01)
+#
+# This file contains USGS Daily Statistics
+#
+# Note:The statistics generated are based on approved daily-mean data and may not match those published by the USGS in official publications.
+# The user is responsible for assessment and use of statistics from this site.
+# For more details on why the statistics may not match, visit http://help.waterdata.usgs.gov/faq/about-statistics.
+#
+# Data heading explanations.
+# agency_cd       -- agency code
+# site_no         -- Site identification number
+# parameter_cd    -- Parameter code
+# station_nm      -- Site name
+# loc_web_ds      -- Additional measurement description
+#
+# Data for the following 1 site(s) are contained in this file
+# agency_cd   site_no      parameter_cd   station_nm (loc_web_ds)
+# USGS        09163500     00010          COLORADO RIVER NEAR COLORADO-UTAH STATE LINE
+# USGS        09163500     00060          COLORADO RIVER NEAR COLORADO-UTAH STATE LINE
+# USGS        09163500     00095          COLORADO RIVER NEAR COLORADO-UTAH STATE LINE
+#
+# Explanation of Parameter Codes
+# parameter_cd	Parameter Name
+# 00010         Temperature, water, degrees Celsius
+# 00060         Discharge, cubic feet per second
+# 00095         Specific conductance, water, unfiltered, microsiemens per centimeter at 25 degrees Celsius
+#
+# Data heading explanations.
+# month_nu    ... The month for which the statistics apply.
+# day_nu      ... The day for which the statistics apply.
+# begin_yr    ... First water year of data of daily mean values for this day.
+# end_yr      ... Last water year of data of daily mean values for this day.
+# count_nu    ... Number of values used in the calculation.
+# mean_va     ... Mean of daily mean values for this day.
+#
+agency_cd	site_no	parameter_cd	ts_id	loc_web_ds	month_nu	day_nu	begin_yr	end_yr	count_nu	mean_va
+5s	15s	5s	10n	15s	3n	3n	6n	6n	8n	12s
+USGS	09163500	00095	19086		1	4	2021	2021	1	1390
+USGS	09163500	00095	19086		1	5	2021	2021	1	1350
+USGS	09163500	00095	19086		1	6	2021	2021	1	1330
+USGS	09163500	00095	19086		1	10	2021	2021	1	1280
+USGS	09163500	00095	19086		1	15	2021	2021	1	1350
+USGS	09163500	00095	19086		1	18	2021	2021	1	1330
+USGS	09163500	00095	19086		1	19	2021	2021	1	1350
+USGS	09163500	00095	19086		1	20	2021	2021	1	1290
+USGS	09163500	00095	19086		1	21	2021	2021	1	1280
+USGS	09163500	00095	19086		1	22	2021	2021	1	1270
+USGS	09163500	00095	19086		1	23	2021	2021	1	1280
+USGS	09163500	00095	19086		1	24	2021	2021	1	1300
+USGS	09163500	00095	19086		1	25	2021	2021	1	1290
+USGS	09163500	00095	19086		1	26	2021	2021	1	1300
+USGS	09163500	00095	19086		1	27	2021	2021	1	1290
+USGS	09163500	00095	19086		1	28	2021	2021	1	1290
+USGS	09163500	00095	19086		1	29	2021	2021	1	1310
+USGS	09163500	00095	19086		1	30	2021	2021	1	1280
+USGS	09163500	00095	19086		1	31	2021	2021	1	1280
+USGS	09163500	00095	19086		2	1	2021	2021	1	1250
+USGS	09163500	00095	19086		2	2	2021	2021	1	1270
+USGS	09163500	00095	19086		2	3	2021	2021	1	1270
+USGS	09163500	00095	19086		2	4	2021	2021	1	1270
+USGS	09163500	00095	19086		2	5	2021	2021	1	1280
+USGS	09163500	00095	19086		2	6	2021	2021	1	1290
+USGS	09163500	00095	19086		2	7	2021	2021	1	1310
+USGS	09163500	00095	19086		2	8	2021	2021	1	1320
+USGS	09163500	00095	19086		2	9	2021	2021	1	1330
+USGS	09163500	00095	19086		2	10	2021	2021	1	1320
+USGS	09163500	00095	19086		2	11	2021	2021	1	1310
+USGS	09163500	00095	19086		2	12	2021	2021	1	1320
+USGS	09163500	00095	19086		2	13	2021	2021	1	1310
+USGS	09163500	00095	19086		2	14	2021	2021	1	1300
+USGS	09163500	00095	19086		2	15	2021	2021	1	1300
+USGS	09163500	00095	19086		2	16	2021	2021	1	1300
+USGS	09163500	00095	19086		2	17	2021	2021	1	1290
+USGS	09163500	00095	19086		2	18	2021	2021	1	1280
+USGS	09163500	00095	19086		2	19	2021	2021	1	1290
+USGS	09163500	00095	19086		2	20	2021	2021	1	1310
+USGS	09163500	00095	19086		2	21	2021	2021	1	1300
+USGS	09163500	00095	19086		2	22	2021	2021	1	1290
+USGS	09163500	00095	19086		2	23	2021	2021	1	1310
+USGS	09163500	00095	19086		2	24	2021	2021	1	1300
+USGS	09163500	00095	19086		2	25	2021	2021	1	1280
+USGS	09163500	00095	19086		2	26	2021	2021	1	1280
+USGS	09163500	00095	19086		2	27	2021	2021	1	1280
+USGS	09163500	00095	19086		2	28	2021	2021	1	1280
+USGS	09163500	00095	19086		3	1	2021	2021	1	1270
+USGS	09163500	00095	19086		3	2	2021	2021	1	1280

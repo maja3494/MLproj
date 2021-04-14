@@ -1,7 +1,7 @@
 #
 #
 # US Geological Survey, Water Resources Data
-# retrieved: 2021-04-09 16:53:46 -04:00	(natwebvaas01)
+# retrieved: 2021-04-13 19:40:06 -04:00	(natwebcaas01)
 #
 # This file contains USGS Daily Statistics
 #
@@ -18,10 +18,12 @@
 #
 # Data for the following 1 site(s) are contained in this file
 # agency_cd   site_no      parameter_cd   station_nm (loc_web_ds)
+# USGS        09070500     00010          COLORADO RIVER NEAR DOTSERO, CO
 # USGS        09070500     00060          COLORADO RIVER NEAR DOTSERO, CO
 #
 # Explanation of Parameter Codes
 # parameter_cd	Parameter Name
+# 00010         Temperature, water, degrees Celsius
 # 00060         Discharge, cubic feet per second
 #
 # Data heading explanations.
