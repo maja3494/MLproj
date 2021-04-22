@@ -74,7 +74,7 @@ class SnoTelDataRetriever:
         return data
 
 
-def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_water_year):
+def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_water_year, end_of_snow_water_year):
     if isinstance(station_ids, str):
         station_ids = [station_ids]
 
@@ -84,7 +84,9 @@ def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_
     assert len(sntl_stations_metadata) == len(station_ids)
 
     req_begin_time = datetime.strptime(f"{begin_year}-{start_of_snow_water_year}", '%Y-%m-%d')
-    end_time = datetime.strptime(f"{end_year}-{start_of_snow_water_year}", '%Y-%m-%d') + relativedelta(years=1)
+    end_time = datetime.strptime(f"{end_year}-{end_of_snow_water_year}", '%Y-%m-%d') + relativedelta(years=1)
+
+    delta_of_time_frame = datetime.strptime(f"{begin_year}-{end_of_snow_water_year}", '%Y-%m-%d') + relativedelta(years=1) - req_begin_time
 
     start_dates = []
     station_names = []
@@ -105,7 +107,7 @@ def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_
     datas = [None for _ in range(len(sntl_stations))]
     this_start_time = start_time
     while this_start_time < end_time:
-        this_end_date = this_start_time + relativedelta(years=1)
+        this_end_date = this_start_time + delta_of_time_frame  # relativedelta(years=1)
 
         sntl_data = stdr.get_snow_water_eq_data(sntl_stations, this_start_time, this_end_date)
 
@@ -120,7 +122,7 @@ def build_sno_water_eq_dataset(station_ids, begin_year, end_year, start_of_snow_
 
             station_dataset[i].append((this_start_time, this_end_date, row_list))
 
-        this_start_time = this_end_date
+        this_start_time += relativedelta(years=1)
 
     return station_dataset
 
