@@ -21,7 +21,7 @@ def file_data_to_cleaned(data):
             month=split[5]
             date=year+'-'+month.zfill(2)+'-'+day.zfill(2)
             x.append(np.datetime64(date))
-            y.append(float(split[-1][:-1]))
+            y.append(float(split[-1]))
 
     line_data = [("i", "date", "value")] + list(zip(range(len(x)), np.asarray(pd.to_datetime(x)), y))
 
@@ -38,15 +38,15 @@ def scraper(dir_path, siteNumber, year, start_time, end_time):
     end_datetime = datetime.strptime(f"{year}-{end_time}", '%Y-%m-%d')
     fileName = f"{start_datetime.strftime('%Y%m%d')}-{end_datetime.strftime('%Y%m%d')}.csv"
     #fileName=siteNumber+"_"+year+".csv"
-    if path.exists(os.path.join(dir_path, fileName)):
-        print('File '+os.path.join(dir_path, fileName)+' already exsists')
-    else:
-        file=open(os.path.join(dir_path, fileName, ), "w", newline='')
-        #file.write(line_data)
-        csv_fw = csv.writer(file)
-        csv_fw.writerows(line_data)
-        file.close()
-        print('File '+os.path.join(dir_path, fileName)+' created.')
+    # if path.exists(os.path.join(dir_path, fileName)):
+    #     print('File '+os.path.join(dir_path, fileName)+' already exsists')
+    # else:
+    file=open(os.path.join(dir_path, fileName, ), "w", newline='')
+    #file.write(line_data)
+    csv_fw = csv.writer(file)
+    csv_fw.writerows(line_data)
+    file.close()
+    print('File '+os.path.join(dir_path, fileName)+' created.')
 
 
 def scrapeRange(dir_path, siteNumber,startYear,endYear, start_time, end_time):

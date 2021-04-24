@@ -107,7 +107,7 @@ class DatasetBuilder():
                 if not os.path.exists(site_dir_path):
                     os.makedirs(site_dir_path)
 
-                scrapeRange(site_dir_path, river_gauge_id, begin_year, end_year, water_start_end[0], water_start_end[1])
+                scrapeRange(site_dir_path, river_gauge_id, str(int(begin_year)+1), end_year, water_start_end[0], water_start_end[1])
 
 
 if __name__ == '__main__':
@@ -115,12 +115,12 @@ if __name__ == '__main__':
     # dsb.build_dataset([
     #                     ('Boulder Creek', ['838', '663'], ['06730200'])  #,
     #                     #('basin_name', ['snotelid2', 'snotelid3'], ['watersiteid2', 'watersiteid3', 'watersiteid4'])
-    #                   ], '2000', '2021', ('10-01', '06-30'), ('01-01', '09-30'), 'dataset')
+    #                   ], '1986', '2021', ('10-01', '06-30'), ('01-01', '09-30'), 'dataset')
 
-    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 10, (1960, 2016))
+    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (1960, 2013))
     datas_train = list(dsr)
     print(len(datas_train))
 
-    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 10, (2016, 2050))
+    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (2013, 2050))
     datas_test = list(dsr)
     print(len(datas_test))
