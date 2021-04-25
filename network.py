@@ -136,8 +136,12 @@ class Decoder(nn.Module):
         """
         # TODO: add attention
 
+        if len(input.shape) == 0:
+            length=1
+        else:
+            length=len(input)
         rescaled_input = self.to_rescaled_input(input)
-        embedded = self.embedding(rescaled_input).view(len(input), 1, self.embedding_dim)
+        embedded = self.embedding(rescaled_input).view(length, 1, self.embedding_dim)
         embedded = self.emb_relu(embedded)
 
         if hidden is None:
@@ -237,7 +241,7 @@ class EncoderDecoder:
                 # it returns the outputs in the rescaled form
                 decoder_output, hidden = self.decoder(decoder_input, hidden)
                 output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
-                loss += criterion(decoder_output,target_rescaled_tensor[di])
+                loss += self.criterion(decoder_output[:,0,:],target_rescaled_tensor[di])
                 decoder_input = target_tensor[di]      
         else:
             for di in range(target_length):
@@ -245,13 +249,14 @@ class EncoderDecoder:
                 # it returns the outputs in the rescaled form
                 decoder_output, hidden = self.decoder(decoder_input, hidden)
                 output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
+                loss += self.criterion(decoder_output[:,0,:],target_rescaled_tensor[di])
                 decoder_input = output_val
 
         loss.backward()
         self.encoder_optimizer.step()
-        self.decorder_optimizer.step()
+        self.decoder_optimizer.step()
 
-        return loss.item / target_length
+        return loss.item() / target_length
 
 
 if __name__ == '__main__':
