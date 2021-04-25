@@ -176,7 +176,7 @@ class Decoder(nn.Module):
 
 class EncoderDecoder:
     def __init__(self, input_range, input_mult_factor, input_embedding_dim, output_range, output_mult_factor,
-                 output_embedding_dim, hidden_size, rnn_type='gru'):
+                 output_embedding_dim, hidden_size,tfr=0.5, rnn_type='gru'):
         super(EncoderDecoder, self).__init__()
 
         self.hidden_size = hidden_size
@@ -185,6 +185,7 @@ class EncoderDecoder:
         self.encoder_optimizer = optim.Adam(self.encoder.parameters())
         self.decoder_optimizer = optim.Adam(self.decoder.parameters())
         self.criterion = nn.NLLLoss()
+        self.teacher_forcing_ratio = tfr
 
     def run_idk(self, input_tensor, output_length, hidden=None):
         """
@@ -203,7 +204,7 @@ class EncoderDecoder:
         for di in range(output_length):
             # note, self.decoder will rescale the data and so it expects the non-rescaled values
             # it returns the outputs in the rescaled form
-            decoder_output, decoder_hidden = self.decoder(decoder_input, hidden)
+            decoder_output, hidden = self.decoder(decoder_input, hidden)
             output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
             output[di] = output_val.detach()[0]
             decoder_input = output_val
@@ -213,8 +214,44 @@ class EncoderDecoder:
     def train(self, input_tensor, target_tensor):
         target_rescaled_tensor = self.decoder.to_rescaled_input(target_tensor).reshape(-1,1)
 
-        # TODO
-        return 0.0
+        encoder_hidden = self.encoder.forward(input_tensor)
+        self.encoder_optimizer.zero_grad()
+        self.decoder_optimizer.zero_grad()
+
+        input_length = input_tensor.size(0)
+        target_length = target_tensor.size(0)
+
+        encoder_outputs, hidden = self.encoder(input_tensor)
+
+        loss = 0
+
+        decoder_input = torch.tensor([0])
+
+        decoder_hidden = encoder_hidden
+
+        use_tf = True if random.random() < self.teacher_forcing_ratio else False
+
+        if use_tf:
+            for di in range(target_length):
+                # note, self.decoder will rescale the data and so it expects the non-rescaled values
+                # it returns the outputs in the rescaled form
+                decoder_output, hidden = self.decoder(decoder_input, hidden)
+                output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
+                loss += criterion(decoder_output,target_rescaled_tensor[di])
+                decoder_input = target_tensor[di]      
+        else:
+            for di in range(target_length):
+                # note, self.decoder will rescale the data and so it expects the non-rescaled values
+                # it returns the outputs in the rescaled form
+                decoder_output, hidden = self.decoder(decoder_input, hidden)
+                output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
+                decoder_input = output_val
+
+        loss.backward()
+        self.encoder_optimizer.step()
+        self.decorder_optimizer.step()
+
+        return loss.item / target_length
 
 
 if __name__ == '__main__':
