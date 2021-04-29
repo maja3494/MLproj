@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 
 from build_dataset import DatasetReader
 
+from scipy.ndimage import gaussian_filter1d
+
 
 # sort of from: https://discuss.pytorch.org/t/convert-tensor-of-floats-to-tensor-of-ordinal-data/109126/3
 # we aren't using it right now, but here is the code
@@ -180,15 +182,20 @@ class Decoder(nn.Module):
 
 class EncoderDecoder:
     def __init__(self, input_range, input_mult_factor, input_embedding_dim, output_range, output_mult_factor,
-                 output_embedding_dim, hidden_size,tfr=0.5, rnn_type='gru'):
+                 output_embedding_dim, hidden_size,tfr=0.5, rnn_type='gru', use_nllloss=False):
         super(EncoderDecoder, self).__init__()
+
+        self.use_nllloss = use_nllloss
 
         self.hidden_size = hidden_size
         self.encoder = Encoder(input_range, input_mult_factor, input_embedding_dim, hidden_size, rnn_type=rnn_type)
         self.decoder = Decoder(output_range, output_mult_factor, output_embedding_dim, hidden_size, rnn_type=rnn_type)
+        # self.encoder_optimizer = optim.SGD(self.encoder.parameters(), lr=0.01)
+        # self.decoder_optimizer = optim.SGD(self.decoder.parameters(), lr=0.01)
         self.encoder_optimizer = optim.Adam(self.encoder.parameters())
         self.decoder_optimizer = optim.Adam(self.decoder.parameters())
         self.criterion = nn.NLLLoss()
+        self.criterion2 = nn.KLDivLoss(reduction='sum')
         self.teacher_forcing_ratio = tfr
 
     def run_idk(self, input_tensor, output_length, hidden=None):
@@ -215,12 +222,12 @@ class EncoderDecoder:
 
         return output
 
-    def train(self, input_tensor, target_tensor):
+    def train(self, input_tensor, target_tensor, gaussian_sigma_value=5):
         target_rescaled_tensor = self.decoder.to_rescaled_input(target_tensor).reshape(-1,1)
-
-        encoder_hidden = self.encoder.forward(input_tensor)
         self.encoder_optimizer.zero_grad()
         self.decoder_optimizer.zero_grad()
+
+        encoder_hidden = self.encoder.forward(input_tensor)
 
         input_length = input_tensor.size(0)
         target_length = target_tensor.size(0)
@@ -241,7 +248,13 @@ class EncoderDecoder:
                 # it returns the outputs in the rescaled form
                 decoder_output, hidden = self.decoder(decoder_input, hidden)
                 output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
-                loss += self.criterion(decoder_output[:,0,:],target_rescaled_tensor[di])
+                if self.use_nllloss:
+                    loss += self.criterion(decoder_output[:, 0, :], target_rescaled_tensor[di])
+                else:
+                    # KLDivLoss expects a tensor of probabilities as the target tensor, so we use a gaussian
+                    # convolution of the onehot embedding to get a gaussian distribution around the target
+                    tes_val = torch.from_numpy(gaussian_filter1d(nn.functional.one_hot(target_rescaled_tensor[di], num_classes=self.decoder.num_embedding).type(torch.float).numpy(), gaussian_sigma_value))
+                    loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = target_tensor[di]      
         else:
             for di in range(target_length):
@@ -249,7 +262,11 @@ class EncoderDecoder:
                 # it returns the outputs in the rescaled form
                 decoder_output, hidden = self.decoder(decoder_input, hidden)
                 output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
-                loss += self.criterion(decoder_output[:,0,:],target_rescaled_tensor[di])
+                if self.use_nllloss:
+                    loss += self.criterion(decoder_output[:, 0, :], target_rescaled_tensor[di])
+                else:
+                    tes_val = torch.from_numpy(gaussian_filter1d(nn.functional.one_hot(target_rescaled_tensor[di], num_classes=self.decoder.num_embedding).type(torch.float).numpy(), gaussian_sigma_value))
+                    loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = output_val
 
         loss.backward()
@@ -260,13 +277,14 @@ class EncoderDecoder:
 
 
 if __name__ == '__main__':
-    test_net = EncoderDecoder((0,30), 10, 20, (0,1000), 0.5, 10, 1000)
+    test_net = EncoderDecoder((0,30), 5, 20, (0,1000), 0.1, 10, 500)
 
     train_loss = []
 
-    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 40, (1960, 2016))
+    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 100, (1960, 2016))
     for x, y in dsr:
-        this_loss = test_net.train(torch.from_numpy(x),torch.from_numpy(y))
+        # lets offset the output by 75 points because it's not important (for boulder creek at least)
+        this_loss = test_net.train(torch.from_numpy(x),torch.from_numpy(y[75:]), 10)
         train_loss.append(this_loss)
         print(this_loss)
 
@@ -275,8 +293,8 @@ if __name__ == '__main__':
 
     dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 2, (2013, 2050))
     for x, y in dsr:
-        y_hat = test_net.run_idk(torch.from_numpy(x), y.shape[0])
-        print(y, y_hat.numpy())
+        y_hat = test_net.run_idk(torch.from_numpy(x), y[75:].shape[0])
+        print(y[75:], y_hat.numpy())
         plt.plot(np.arange(y.shape[0]), y, label='y')
-        plt.plot(np.arange(y_hat.shape[0]), y_hat.numpy(), label='y_hat')
+        plt.plot(np.arange(y_hat.shape[0])+75, y_hat.numpy(), label='y_hat')
         plt.show()
