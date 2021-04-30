@@ -4,6 +4,7 @@ import unicodedata
 import string
 import re
 import random
+from time import time
 
 import torch
 import torch.nn as nn
@@ -53,10 +54,12 @@ class FloatOneHot:
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_range, mult_factor, embedding_dim, hidden_size, rnn_type='gru'):  # or should we have the caller make the rnn layer
+    def __init__(self, device, input_range, mult_factor, embedding_dim, hidden_size, rnn_type='gru'):  # or should we have the caller make the rnn layer
         super(Encoder, self).__init__()
 
         assert rnn_type in ['gru']  # TODO: add lstm
+
+        self.device = device
 
         self.rnn_type = rnn_type
         self.hidden_size = hidden_size
@@ -82,13 +85,15 @@ class Encoder(nn.Module):
         """
         # because the embedding layer expects integer values we want to rescale the input data
         rescaled_input = self.to_rescaled_input(input)
+        rescaled_input = rescaled_input.to(device)
         # the rnn expects input with the dimensions (seq_len, batch, input_size).
         # we will only be doing one batch at a time.
-        embedded = self.embedding(rescaled_input).view(input.shape[0], 1, self.embedding_dim)
+        embedded = self.embedding(rescaled_input)
+        embedded = embedded.view(input.shape[0], 1, self.embedding_dim)
 
         if hidden is None:
             # TODO: add lstm, not the hidden state is different for lstm than it is for gru
-            hidden = torch.zeros(self.num_layers*self.num_directions, 1, self.hidden_size)  # TODO: device=device
+            hidden = torch.zeros(self.num_layers*self.num_directions, 1, self.hidden_size, device=self.device)
 
         output, hidden = self.rnn(embedded, hidden)  # note: this is different for lstm
 
@@ -106,10 +111,12 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_range, mult_factor, embedding_dim, hidden_size, rnn_type='gru'):  #num_input_bins, input_range, hidden_size, rnn_type='gru'
+    def __init__(self, device, output_range, mult_factor, embedding_dim, hidden_size, rnn_type='gru'):  #num_input_bins, input_range, hidden_size, rnn_type='gru'
         super(Decoder, self).__init__()
 
         assert rnn_type in ['gru']
+
+        self.device = device
 
         self.rnn_type = rnn_type
         self.hidden_size = hidden_size
@@ -143,6 +150,7 @@ class Decoder(nn.Module):
         else:
             length=len(input)
         rescaled_input = self.to_rescaled_input(input)
+        rescaled_input= rescaled_input.to(self.device)
         embedded = self.embedding(rescaled_input).view(length, 1, self.embedding_dim)
         embedded = self.emb_relu(embedded)
 
@@ -181,15 +189,17 @@ class Decoder(nn.Module):
 
 
 class EncoderDecoder:
-    def __init__(self, input_range, input_mult_factor, input_embedding_dim, output_range, output_mult_factor,
-                 output_embedding_dim, hidden_size,tfr=0.5, rnn_type='gru', use_nllloss=False):
+    def __init__(self, device, input_range, input_mult_factor, input_embedding_dim, output_range, output_mult_factor,
+                 output_embedding_dim, hidden_size,tfr=0.8, rnn_type='gru', use_nllloss=False):
         super(EncoderDecoder, self).__init__()
 
         self.use_nllloss = use_nllloss
 
+        self.device = device
+
         self.hidden_size = hidden_size
-        self.encoder = Encoder(input_range, input_mult_factor, input_embedding_dim, hidden_size, rnn_type=rnn_type)
-        self.decoder = Decoder(output_range, output_mult_factor, output_embedding_dim, hidden_size, rnn_type=rnn_type)
+        self.encoder = Encoder(device, input_range, input_mult_factor, input_embedding_dim, hidden_size, rnn_type=rnn_type).to(device)
+        self.decoder = Decoder(device, output_range, output_mult_factor, output_embedding_dim, hidden_size, rnn_type=rnn_type).to(device)
         # self.encoder_optimizer = optim.SGD(self.encoder.parameters(), lr=0.01)
         # self.decoder_optimizer = optim.SGD(self.decoder.parameters(), lr=0.01)
         self.encoder_optimizer = optim.Adam(self.encoder.parameters())
@@ -212,13 +222,14 @@ class EncoderDecoder:
 
         output = torch.zeros(output_length)
 
-        for di in range(output_length):
-            # note, self.decoder will rescale the data and so it expects the non-rescaled values
-            # it returns the outputs in the rescaled form
-            decoder_output, hidden = self.decoder(decoder_input, hidden)
-            output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
-            output[di] = output_val.detach()[0]
-            decoder_input = output_val
+        with torch.no_grad():
+            for di in range(output_length):
+                # note, self.decoder will rescale the data and so it expects the non-rescaled values
+                # it returns the outputs in the rescaled form
+                decoder_output, hidden = self.decoder(decoder_input, hidden)
+                output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
+                output[di] = output_val.detach()[0]
+                decoder_input = output_val
 
         return output
 
@@ -247,13 +258,16 @@ class EncoderDecoder:
                 # note, self.decoder will rescale the data and so it expects the non-rescaled values
                 # it returns the outputs in the rescaled form
                 decoder_output, hidden = self.decoder(decoder_input, hidden)
+                decoder_output = decoder_output.to(device)
+                hidden = hidden.to(device)
                 output_val = self.decoder.network_output_tensors_to_numbers(decoder_output)
                 if self.use_nllloss:
                     loss += self.criterion(decoder_output[:, 0, :], target_rescaled_tensor[di])
                 else:
                     # KLDivLoss expects a tensor of probabilities as the target tensor, so we use a gaussian
                     # convolution of the onehot embedding to get a gaussian distribution around the target
-                    tes_val = torch.from_numpy(gaussian_filter1d(nn.functional.one_hot(target_rescaled_tensor[di], num_classes=self.decoder.num_embedding).type(torch.float).numpy(), gaussian_sigma_value))
+                    tes_val = torch.from_numpy(gaussian_filter1d(nn.functional.one_hot(target_rescaled_tensor[di], num_classes=self.decoder.num_embedding).type(torch.float).cpu().numpy(), gaussian_sigma_value))
+                    tes_val = tes_val.to(device)
                     loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = target_tensor[di]      
         else:
@@ -265,7 +279,8 @@ class EncoderDecoder:
                 if self.use_nllloss:
                     loss += self.criterion(decoder_output[:, 0, :], target_rescaled_tensor[di])
                 else:
-                    tes_val = torch.from_numpy(gaussian_filter1d(nn.functional.one_hot(target_rescaled_tensor[di], num_classes=self.decoder.num_embedding).type(torch.float).numpy(), gaussian_sigma_value))
+                    tes_val = torch.from_numpy(gaussian_filter1d(nn.functional.one_hot(target_rescaled_tensor[di], num_classes=self.decoder.num_embedding).type(torch.float).cpu().numpy(), gaussian_sigma_value))
+                    tes_val = tes_val.to(device)
                     loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = output_val
 
@@ -277,24 +292,38 @@ class EncoderDecoder:
 
 
 if __name__ == '__main__':
-    test_net = EncoderDecoder((0,30), 5, 20, (0,1000), 0.1, 10, 500)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    epochs = 100
+    print('device:', device)
+
+    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, 10, 500)
 
     train_loss = []
 
-    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 100, (1960, 2016))
+    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', epochs, (1960, 2016))
+    print('training...')
+    start = time()
     for x, y in dsr:
+        x = torch.from_numpy(x).to(device)
+        y = torch.from_numpy(y[75:]).to(device)
         # lets offset the output by 75 points because it's not important (for boulder creek at least)
-        this_loss = test_net.train(torch.from_numpy(x),torch.from_numpy(y[75:]), 10)
+        this_loss = test_net.train(x, y, 10)
         train_loss.append(this_loss)
-        print(this_loss)
+        # print(this_loss)
+    end = time()
+    train_time = end - start
+    print('training complete, time:', train_time)
 
     plt.plot(np.arange(len(train_loss)), train_loss)
     plt.show()
 
     dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 2, (2013, 2050))
     for x, y in dsr:
-        y_hat = test_net.run_idk(torch.from_numpy(x), y[75:].shape[0])
-        print(y[75:], y_hat.numpy())
+        x = torch.from_numpy(x).to(device)
+        y = torch.from_numpy(y)
+        y_hat = test_net.run_idk(x, y[75:].shape[0])
+        y_hat = y_hat.cpu()
+        # print(y[75:], y_hat.numpy())
         plt.plot(np.arange(y.shape[0]), y, label='y')
         plt.plot(np.arange(y_hat.shape[0])+75, y_hat.numpy(), label='y_hat')
         plt.show()
