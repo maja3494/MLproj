@@ -65,7 +65,7 @@ class Encoder(nn.Module):
         self.hidden_size = hidden_size
 
         # TODO: should we make as inputs
-        self.num_layers = 1
+        self.num_layers = 2
         self.num_directions = 1
 
         self.mult_factor = mult_factor
@@ -120,7 +120,7 @@ class Decoder(nn.Module):
 
         self.rnn_type = rnn_type
         self.hidden_size = hidden_size
-        self.num_layers = 1
+        self.num_layers = 2
         self.num_directions = 1
 
         self.num_embedding = int((output_range[1] - output_range[0])*mult_factor)
@@ -134,6 +134,8 @@ class Decoder(nn.Module):
         self.rnn = nn.GRU(self.embedding_dim, self.hidden_size, self.num_layers, bidirectional=(self.num_directions == 2))  # batch_first=True ? dropout=True ? bias = True ?
 
         self.dense = nn.Linear(self.hidden_size*self.num_directions, self.num_embedding, True)
+        self.drop = nn.Dropout(p=0.2)
+        self.dense2 = nn.Linear(self.num_embedding, self.num_embedding, True)
         self.softmax = nn.LogSoftmax(dim=2)  # note, this should NOT be dim=1 like they did in the seq2seq_translation_tutorial
 
     def forward(self, input, hidden):
@@ -160,6 +162,8 @@ class Decoder(nn.Module):
         output, hidden = self.rnn(embedded, hidden)  # note: this is different for lstm
 
         output_linear = self.dense(output)
+        output_linear = self.drop(output_linear)
+        output_linear = self.dense2(output_linear)
 
         output_encodded = self.softmax(output_linear)
 
@@ -200,8 +204,8 @@ class EncoderDecoder:
         self.hidden_size = hidden_size
         self.encoder = Encoder(device, input_range, input_mult_factor, input_embedding_dim, hidden_size, rnn_type=rnn_type).to(device)
         self.decoder = Decoder(device, output_range, output_mult_factor, output_embedding_dim, hidden_size, rnn_type=rnn_type).to(device)
-        # self.encoder_optimizer = optim.SGD(self.encoder.parameters(), lr=0.01)
-        # self.decoder_optimizer = optim.SGD(self.decoder.parameters(), lr=0.01)
+        # self.encoder_optimizer = optim.SGD(self.encoder.parameters(), lr=0.1)
+        # self.decoder_optimizer = optim.SGD(self.decoder.parameters(), lr=0.1)
         self.encoder_optimizer = optim.Adam(self.encoder.parameters())
         self.decoder_optimizer = optim.Adam(self.decoder.parameters())
         self.criterion = nn.NLLLoss()
@@ -289,14 +293,23 @@ class EncoderDecoder:
         self.decoder_optimizer.step()
 
         return loss.item() / target_length
+    
+    def save(self):
+        torch.save(self.encoder, './enc_last.pth')
+        torch.save(self.decoder, './dec_last.pth')
+    
+    def load(self):
+        self.encoder = torch.load('./enc_init.pth')
+        self.decoder = torch.load('./dec_init.pth')
 
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    epochs = 100
+    epochs = 50
     print('device:', device)
 
-    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, 10, 500)
+    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, output_embedding_dim=10, hidden_size=100, tfr=0.8)
+    test_net.load() # load in last parameter set
 
     train_loss = []
 
@@ -313,6 +326,8 @@ if __name__ == '__main__':
     end = time()
     train_time = end - start
     print('training complete, time:', train_time)
+
+    test_net.save()
 
     plt.plot(np.arange(len(train_loss)), train_loss)
     plt.show()
