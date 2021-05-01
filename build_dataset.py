@@ -113,9 +113,9 @@ class DatasetBuilder():
 if __name__ == '__main__':
     dsb = DatasetBuilder()
     dsb.build_dataset([
-                        ('Boulder Creek', ['838', '663'], ['06730200'])  #,
-                        #('basin_name', ['snotelid2', 'snotelid3'], ['watersiteid2', 'watersiteid3', 'watersiteid4'])
-                      ], '1986', '2021', ('10-01', '06-30'), ('01-01', '09-30'), 'dataset')
+                        ('Boulder Creek', ['838', '663'], ['06730200']),
+                        ('Ark', ['369'], ['07094500'])
+                      ], '1986', '2021', ('10-01', '06-30'), ('05-01', '07-30'), 'dataset')
 
     dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (1960, 2013))
     datas_train = list(dsr)
