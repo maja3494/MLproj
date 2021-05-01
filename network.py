@@ -134,7 +134,7 @@ class Decoder(nn.Module):
         self.rnn = nn.GRU(self.embedding_dim, self.hidden_size, self.num_layers, bidirectional=(self.num_directions == 2))  # batch_first=True ? dropout=True ? bias = True ?
 
         self.dense = nn.Linear(self.hidden_size*self.num_directions, self.num_embedding, True)
-        self.drop = nn.Dropout(p=0.4)
+        self.drop = nn.Dropout(p=0.1)
         self.dense2 = nn.Linear(self.num_embedding, self.num_embedding, True)
         self.softmax = nn.LogSoftmax(dim=2)  # note, this should NOT be dim=1 like they did in the seq2seq_translation_tutorial
 
@@ -288,7 +288,7 @@ class EncoderDecoder:
                     loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = output_val
 
-        loss = loss**2
+        loss = loss
         loss.backward()
         self.encoder_optimizer.step()
         self.decoder_optimizer.step()
@@ -306,10 +306,10 @@ class EncoderDecoder:
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    epochs = 200
+    epochs = 10
     print('device:', device)
 
-    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, output_embedding_dim=10, hidden_size=500, tfr=0.9)
+    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, output_embedding_dim=10, hidden_size=500, tfr=0.8)
     # test_net.load() # load in last parameter set
 
     train_loss = []
