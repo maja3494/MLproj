@@ -345,8 +345,10 @@ if __name__ == '__main__':
         y = torch.from_numpy(y)
         y_hat = test_net.run_idk(x, y.shape[0])
         y_hat = y_hat.cpu()
+        std=np.std(y_hat.numpy())
         plt.plot(np.arange(y.shape[0]), y, label='y')
         plt.plot(np.arange(y_hat.shape[0]), y_hat.numpy(), label='y_hat')
+        plt.fill_between(np.arange(y_hat.shape[0]),y_hat.numpy()+std,y_hat.numpy()-std,alpha=0.5, color="orange")
         plt.legend()
         plt.show()
 
