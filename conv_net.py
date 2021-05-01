@@ -7,6 +7,7 @@ import random
 import numpy as np
 from time import time
 from random import shuffle
+import os
 
 import torch
 import torch.nn as nn
@@ -216,6 +217,7 @@ if __name__ == '__main__':
     device = 'cpu'
     num_epochs = 200
     print('device:', device)
+    os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
     model = Net(lr=0.00001, device=device).to(device)
 
@@ -275,7 +277,7 @@ if __name__ == '__main__':
         plt.plot(range(len(y)), y, label='y')
         plt.plot(range(len(yhat)), yhat, label='yhat')
         std=np.std(yhat)
-        plt.fill_between(np.arange(yhat.shape[0]),yhat.numpy()+std,yhat.numpy()-std,alpha=0.5, color="orange")
+        plt.fill_between(np.arange(yhat.shape[0]),yhat + std,yhat - std,alpha=0.5, color="orange")
         plt.legend()
     plt.tight_layout()
     plt.show()
