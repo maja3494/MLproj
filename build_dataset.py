@@ -12,6 +12,10 @@ from usgs_scraper import *
 
 class DatasetReader():
     def __init__(self, dataset_dir, basin_name, snotel_station, water_gauge, loops=10, year_range=(1960,2016)):
+        self.basin_name = basin_name
+        self.snotel_station = snotel_station
+        self.water_gauge = water_gauge
+
         self.dataset_dir = dataset_dir
         self.snotel_data_dir = os.path.join(dataset_dir, basin_name, 'snotel', snotel_station)
         self.water_gauge_dir = os.path.join(dataset_dir, basin_name, 'water_gauge', water_gauge)
@@ -54,6 +58,42 @@ class DatasetReader():
         self.i+=1
 
         return snotel_data['value'].values[:len(snotel_data['value'].values)-look_back], water_gauge_data['value'].values
+
+    def plot_next(self):
+        if self.i >= len(self.file_pairs)*self.loops:
+            raise StopIteration
+
+        i_p = self.i % len(self.file_pairs)
+
+        if i_p == 0:
+            self.p = np.random.permutation(len(self.file_pairs))
+
+        snotel_file, water_gauge_file = self.file_pairs[self.p[i_p]]
+        snotel_data = pd.read_csv(snotel_file)
+        water_gauge_data = pd.read_csv(water_gauge_file)
+
+        # snotel_data['value'].values[:len(snotel_data['value'].values)-look_back], water_gauge_data['value'].values
+
+        # todo: read datas
+        self.i+=1
+
+        fig, ax = plt.subplots(1, 1)
+
+        ld1 = ax.plot_date(np.asarray(pd.to_datetime(snotel_data['date'])), snotel_data['value'].values, '-', label=f"Snow Water Eq Data")
+        ax.set_ylabel("Snow water Eq (in)")
+        ax.set_title(f"{self.basin_name} Run Off Data in {pd.to_datetime(snotel_data['date'])[0].year}-{pd.to_datetime(water_gauge_data['date'])[0].year} (snotel: {self.snotel_station}, gauge: {self.water_gauge})")
+        ax.set_xlabel("Dates")
+        ax.xaxis.set_major_formatter(DateFormatter('%m/%d/%y'))
+
+        ax2 = ax.twinx()
+        ld2 = ax2.plot_date(np.asarray(pd.to_datetime(water_gauge_data['date'])), water_gauge_data['value'].values, '-', label=f"Water level", c='orange')
+        ax2.set_ylabel("Water Level (cfs)")
+        ax2.xaxis.set_major_formatter(DateFormatter('%m/%d/%y'))
+
+        lns = ld1 + ld2
+        labs = [l.get_label() for l in lns]
+        ax.legend(lns, labs, loc=0)
+        plt.show()
 
 
 class DatasetBuilder():
@@ -103,7 +143,7 @@ class DatasetBuilder():
 
             for river_gauge_id in river_gauge_ids:
 
-                site_dir_path = os.path.join(river_gauge_dir_path, str(river_gauge_id))
+                site_dir_path = os.path.join(river_gauge_dir_path, str(river_gauge_id[0]))
                 if not os.path.exists(site_dir_path):
                     os.makedirs(site_dir_path)
 
@@ -113,8 +153,8 @@ class DatasetBuilder():
 if __name__ == '__main__':
     dsb = DatasetBuilder()
     dsb.build_dataset([
-                        ('Boulder Creek', ['838', '663'], ['06730200']),
-                        ('Ark', ['369'], ['07094500'])
+                        ('Boulder Creek', ['838', '663'], [('06730200', None)]),
+                        ('Ark', ['369'], [('07094500', '17840')])
                       ], '1986', '2021', ('10-01', '06-30'), ('05-01', '07-30'), 'dataset')
 
     dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (1960, 2013))
@@ -124,3 +164,7 @@ if __name__ == '__main__':
     dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (2013, 2050))
     datas_test = list(dsr)
     print(len(datas_test))
+
+    # dsr = iter(DatasetReader('dataset', 'Ark', '369', '07094500', 1, (1900, 2050)))
+    # while True:
+    #     dsr.plot_next()

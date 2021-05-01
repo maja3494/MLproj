@@ -9,13 +9,16 @@ import pandas as pd
 import csv
 
 
-def file_data_to_cleaned(data):
+def file_data_to_cleaned(data, other_num):
     lines=data.split('\n')
     x=[]
     y=[]
     for line in lines:
         if len(line) > 0 and line[0] != '#' and line[0] not in 'abcdefghijklmnopqrstuvwxyz'and line[1] not in 'as':
             split = line.split('\t')
+            if other_num is not None:
+                if split[3] != other_num:
+                    continue
             year=split[7]
             day=split[6]
             month=split[5]
@@ -29,11 +32,12 @@ def file_data_to_cleaned(data):
 
 
 def scraper(dir_path, siteNumber, year, start_time, end_time):
+    siteNumber, other_num = siteNumber
     URL=f'https://waterservices.usgs.gov/nwis/stat/?format=rdb&sites={siteNumber}&startDT={year}-{start_time}&endDT={year}-{end_time}&statReportType=daily&statTypeCd=mean'
     page=requests.get(URL)
     soup=BeautifulSoup(page.content,'html.parser')
     results=soup.get_text()
-    line_data = file_data_to_cleaned(results)
+    line_data = file_data_to_cleaned(results, other_num)
     start_datetime = datetime.strptime(f"{year}-{start_time}", '%Y-%m-%d')
     end_datetime = datetime.strptime(f"{year}-{end_time}", '%Y-%m-%d')
     fileName = f"{start_datetime.strftime('%Y%m%d')}-{end_datetime.strftime('%Y%m%d')}.csv"
@@ -41,7 +45,7 @@ def scraper(dir_path, siteNumber, year, start_time, end_time):
     # if path.exists(os.path.join(dir_path, fileName)):
     #     print('File '+os.path.join(dir_path, fileName)+' already exsists')
     # else:
-    file=open(os.path.join(dir_path, fileName, ), "w", newline='')
+    file=open(os.path.join(dir_path, fileName), "w", newline='')
     #file.write(line_data)
     csv_fw = csv.writer(file)
     csv_fw.writerows(line_data)
