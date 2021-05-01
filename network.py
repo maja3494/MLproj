@@ -220,13 +220,13 @@ class EncoderDecoder:
         :param hidden: optional
         :return: 1d tensor of predicted values
         """
-        encoder_outputs, hidden = self.encoder(input_tensor, hidden)  # if you get an error use torch.from_numpy
-
-        decoder_input = torch.tensor([0])  # TODO: or should it be a best guess for first value, idk
-
-        output = torch.zeros(output_length)
-
         with torch.no_grad():
+            encoder_outputs, hidden = self.encoder(input_tensor, hidden)  # if you get an error use torch.from_numpy
+
+            decoder_input = torch.tensor([0])  # TODO: or should it be a best guess for first value, idk
+
+            output = torch.zeros(output_length)
+
             for di in range(output_length):
                 # note, self.decoder will rescale the data and so it expects the non-rescaled values
                 # it returns the outputs in the rescaled form
@@ -237,7 +237,7 @@ class EncoderDecoder:
 
         return output
 
-    def train(self, input_tensor, target_tensor, gaussian_sigma_value=5):
+    def train(self, input_tensor, target_tensor, gaussian_sigma_value=5.0):
         target_rescaled_tensor = self.decoder.to_rescaled_input(target_tensor).reshape(-1,1)
         self.encoder_optimizer.zero_grad()
         self.decoder_optimizer.zero_grad()
@@ -307,10 +307,9 @@ class EncoderDecoder:
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     epochs = 10
-    shift = 0
     print('device:', device)
 
-    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, output_embedding_dim=10, hidden_size=50, tfr=0.8)
+    test_net = EncoderDecoder(device, (0,15), 1, 20, (300,6000), 1/30, output_embedding_dim=10, hidden_size=500, tfr=0.8)
     # test_net.load() # load in last parameter set
 
     train_loss = []
@@ -319,16 +318,16 @@ if __name__ == '__main__':
     start = time()
 
     for epoch in range(epochs):
-        dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (2000, 2016))
+        dsr = DatasetReader('dataset', 'Ark', '369', '07094500', 1, (0, 2013))
         print('epoch:', epoch)
         for x, y in dsr:
             x = torch.from_numpy(x).to(device)
-            y = torch.from_numpy(y[shift:]).to(device)
+            y = torch.from_numpy(y).to(device)
             # lets offset the output by 75 points because it's not important (for boulder creek at least)
             this_loss = test_net.train(x, y, 5)
             train_loss.append(this_loss)
             # print(this_loss)
-        print("prog:", 100.0*(epoch+1)/epochs)
+        print(f"progress: {100.0*(epoch+1)/epochs}%")
     end = time()
     train_time = end - start
     print('training complete, time:', train_time)
@@ -338,13 +337,13 @@ if __name__ == '__main__':
     plt.plot(np.arange(len(train_loss)), train_loss)
     plt.show()
 
-    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 2, (2013, 2050))
+    dsr = DatasetReader('dataset', 'Ark', '369', '07094500', 1, (2013, 2050))
     for x, y in dsr:
         x = torch.from_numpy(x).to(device)
         y = torch.from_numpy(y)
-        y_hat = test_net.run_idk(x, y[shift:].shape[0])
+        y_hat = test_net.run_idk(x, y.shape[0])
         y_hat = y_hat.cpu()
-        # print(y[75:], y_hat.numpy())
         plt.plot(np.arange(y.shape[0]), y, label='y')
-        plt.plot(np.arange(y_hat.shape[0])+shift, y_hat.numpy(), label='y_hat')
+        plt.plot(np.arange(y_hat.shape[0]), y_hat.numpy(), label='y_hat')
+        plt.legend()
         plt.show()
