@@ -214,7 +214,7 @@ def split_data(x_data, y_data):
 if __name__ == '__main__':
     # device = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = 'cpu'
-    num_epochs = 1000
+    num_epochs = 200
     print('device:', device)
 
     model = Net(lr=0.00001, device=device).to(device)

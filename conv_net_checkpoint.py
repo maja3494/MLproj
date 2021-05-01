@@ -208,7 +208,8 @@ def split_data(x_data, y_data):
 
 
 if __name__ == '__main__':
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cpu'
     num_epochs = 100
     print('device:', device)
 
@@ -244,7 +245,7 @@ if __name__ == '__main__':
     # save model
     torch.save(model, './last.pth')
 
-    print('loss_param:', model.state_dict()['loss_param'])
+    # print('loss_param:', model.state_dict()['loss_param'])
 
     # plot loss
     plt.figure(1)
