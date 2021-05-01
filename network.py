@@ -314,16 +314,20 @@ if __name__ == '__main__':
 
     train_loss = []
 
-    dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', epochs, (1960, 2016))
     print('training...')
     start = time()
-    for x, y in dsr:
-        x = torch.from_numpy(x).to(device)
-        y = torch.from_numpy(y[0:]).to(device)
-        # lets offset the output by 75 points because it's not important (for boulder creek at least)
-        this_loss = test_net.train(x, y, 10)
-        train_loss.append(this_loss)
-        # print(this_loss)
+
+    for epoch in range(epochs):
+        dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (1960, 2016))
+        print('epoch:', epoch)
+        for x, y in dsr:
+            x = torch.from_numpy(x).to(device)
+            y = torch.from_numpy(y[0:]).to(device)
+            # lets offset the output by 75 points because it's not important (for boulder creek at least)
+            this_loss = test_net.train(x, y, 10)
+            train_loss.append(this_loss)
+            # print(this_loss)
+        print("prog:", 100.0*(epoch+1)/epochs)
     end = time()
     train_time = end - start
     print('training complete, time:', train_time)
