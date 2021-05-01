@@ -40,15 +40,15 @@ class Net(nn.Module):
             in_channels=20, out_channels=50, padding=0, kernel_size=2, stride=1)
         self.trans_conv3 = torch.nn.ConvTranspose1d(
             in_channels=50, out_channels=1, padding=0, kernel_size=3, stride=1)
-        self.lin1 = nn.Linear(167, 82)
-        self.lin2 = nn.Linear(82, 40)
-        self.lin3 = nn.Linear(40, 50)
-        self.lin4 = nn.Linear(50, 87)
+        self.lin1 = nn.Linear(167, 30)
+        self.lin2 = nn.Linear(30, 10)
+        # self.lin3 = nn.Linear(8, 50)
+        self.lin4 = nn.Linear(10, 87)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.sig = nn.Sigmoid()
         self.maxpool = nn.MaxPool1d(kernel_size=2)
-        self.lin_drop = nn.Dropout(p=0.5)
+        self.lin_drop = nn.Dropout(p=0.8)
         # loss function
         # this is NOT the entire loss function
         self.loss_fn = nn.MSELoss(reduction='sum')
@@ -71,6 +71,7 @@ class Net(nn.Module):
         x = self.conv2(x)
         x = self.relu(x)
         x = self.conv3(x)
+        x = self.relu(x)
         # print('shape1:', x.shape)
         x = self.lin_drop(x)
         x = self.lin1(x)
@@ -78,15 +79,17 @@ class Net(nn.Module):
         # x = self.lin_drop(x)
         x = self.lin2(x)
         x = self.tanh(x)
-        x = self.lin_drop(x)
-        x = self.lin3(x)
-        x = self.tanh(x)
-        x = self.lin_drop(x)
+        # x = self.lin_drop(x)
+        # x = self.lin3(x)
+        # x = self.tanh(x)
+        # x = self.lin_drop(x)
         x = self.lin4(x)
-        x = self.tanh(x)
+        x = self.relu(x)
         x = self.lin_drop(x)
         x = self.trans_conv1(x)
+        x = self.relu(x)
         x = self.trans_conv2(x)
+        x = self.relu(x)
         x = self.trans_conv3(x)
         x = self.relu(x)
         # print('shape2:', x.shape)
@@ -101,7 +104,7 @@ class Net(nn.Module):
         y_train = normalize(y_train[0], dim=0, p=1)
         # loss = self.loss_fn(input=yhat, target=y_train)
         # loss = -((torch.dot(yhat, y_train) + self.loss_param)**2)
-        loss = -0.1*((torch.dot(yhat, y_train) + 0)**2) + 0.01*sub_loss
+        loss = -10*((torch.dot(yhat, y_train) + 0)**2) + 0.1*sub_loss
         # print('loss:', loss)
         self.optimizer.zero_grad()
         loss.backward()
@@ -214,7 +217,7 @@ def split_data(x_data, y_data):
 if __name__ == '__main__':
     # device = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = 'cpu'
-    num_epochs = 200
+    num_epochs = 100
     print('device:', device)
 
     model = Net(lr=0.00001, device=device).to(device)
