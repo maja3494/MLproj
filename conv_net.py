@@ -274,6 +274,8 @@ if __name__ == '__main__':
         y = y[0]
         plt.plot(range(len(y)), y, label='y')
         plt.plot(range(len(yhat)), yhat, label='yhat')
+        std=np.std(yhat)
+        plt.fill_between(np.arange(yhat.shape[0]),yhat.numpy()+std,yhat.numpy()-std,alpha=0.5, color="orange")
         plt.legend()
     plt.tight_layout()
     plt.show()
