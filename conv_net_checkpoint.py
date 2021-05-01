@@ -41,25 +41,24 @@ class Net(nn.Module):
         self.trans_conv3 = torch.nn.ConvTranspose1d(
             in_channels=50, out_channels=1, padding=0, kernel_size=3, stride=1)
         self.lin1 = nn.Linear(167, 82)
-        self.lin2 = nn.Linear(82, 40)
-        self.lin3 = nn.Linear(40, 50)
+        self.lin2 = nn.Linear(82, 10)
+        self.lin3 = nn.Linear(10, 50)
         self.lin4 = nn.Linear(50, 87)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.sig = nn.Sigmoid()
         self.maxpool = nn.MaxPool1d(kernel_size=2)
-        self.lin_drop = nn.Dropout(p=0.5)
+        self.lin_drop = nn.Dropout(p=0.6)
         # loss function
-        # this is NOT the entire loss function
-        self.loss_fn = nn.MSELoss(reduction='sum')
+        self.loss_fn = nn.L1Loss(reduction='sum')
         self.loss_param = nn.Parameter(torch.tensor(
             data=11, dtype=torch.float32, device=self.device, requires_grad=True))
         # auxilliary fields
-        # self.optimizer = optim.SGD(self.parameters(), lr=lr, momentum=0.5)
-        self.optimizer = optim.AdamW(self.parameters(), lr=lr*100)
+        self.optimizer = optim.SGD(self.parameters(), lr=lr, momentum=0.5)
+        # self.optimizer = optim.AdamW(self.parameters())
         self.train_losses = []
         self.test_losses = []
-        # self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=lr, max_lr=lr*10)
+        # self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=lr, max_lr=lr/1000)
 
     def forward(self, x):
         # conv1
@@ -75,7 +74,7 @@ class Net(nn.Module):
         x = self.lin_drop(x)
         x = self.lin1(x)
         x = self.tanh(x)
-        # x = self.lin_drop(x)
+        x = self.lin_drop(x)
         x = self.lin2(x)
         x = self.tanh(x)
         x = self.lin_drop(x)
@@ -88,20 +87,17 @@ class Net(nn.Module):
         x = self.trans_conv1(x)
         x = self.trans_conv2(x)
         x = self.trans_conv3(x)
-        x = self.relu(x)
         # print('shape2:', x.shape)
         return x[:][0][:]  # remove channel dimension
 
     def train_step(self, x_train, y_train):
         self.train()
         yhat = self(x_train)
-        sub_loss = self.loss_fn(yhat, y_train)
-        # print('yhat_sum:', y_sum)
         yhat = normalize(yhat[0], dim=0, p=1)
         y_train = normalize(y_train[0], dim=0, p=1)
-        # loss = self.loss_fn(input=yhat, target=y_train)
+        # self.loss_fn(input=yhat, target=y_train)
         # loss = -((torch.dot(yhat, y_train) + self.loss_param)**2)
-        loss = -0.1*((torch.dot(yhat, y_train) + 0)**2) + 0.01*sub_loss
+        loss = -((torch.dot(yhat, y_train) + 11)**2)
         # print('loss:', loss)
         self.optimizer.zero_grad()
         loss.backward()
@@ -212,12 +208,11 @@ def split_data(x_data, y_data):
 
 
 if __name__ == '__main__':
-    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    device = 'cpu'
-    num_epochs = 1000
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    num_epochs = 100
     print('device:', device)
 
-    model = Net(lr=0.00001, device=device).to(device)
+    model = Net(lr=10, device=device).to(device)
 
     dsr = DatasetReader('dataset', 'Ark', '369',
                         '07094500', 1, (1980, 2021))
@@ -237,7 +232,7 @@ if __name__ == '__main__':
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=True)
 
     # load model parameters
-    # model = torch.load('./aaa.pth')
+    # model = torch.load('./best4.pth')
 
     # training loop
     print('training...')
@@ -249,7 +244,7 @@ if __name__ == '__main__':
     # save model
     torch.save(model, './last.pth')
 
-    # print('loss_param:', model.state_dict()['loss_param'])
+    print('loss_param:', model.state_dict()['loss_param'])
 
     # plot loss
     plt.figure(1)
@@ -266,7 +261,6 @@ if __name__ == '__main__':
         plt.subplot(2, 2, i+1)
         x, y = next(test_iter)
         x = x.to(device)
-        model.eval()
         yhat = model(x)
         y = y.cpu().numpy()
         yhat = yhat.cpu().detach().numpy()
