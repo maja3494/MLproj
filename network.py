@@ -134,7 +134,7 @@ class Decoder(nn.Module):
         self.rnn = nn.GRU(self.embedding_dim, self.hidden_size, self.num_layers, bidirectional=(self.num_directions == 2))  # batch_first=True ? dropout=True ? bias = True ?
 
         self.dense = nn.Linear(self.hidden_size*self.num_directions, self.num_embedding, True)
-        self.drop = nn.Dropout(p=0.1)
+        self.drop = nn.Dropout(p=0.0)
         self.dense2 = nn.Linear(self.num_embedding, self.num_embedding, True)
         self.softmax = nn.LogSoftmax(dim=2)  # note, this should NOT be dim=1 like they did in the seq2seq_translation_tutorial
 
@@ -288,7 +288,7 @@ class EncoderDecoder:
                     loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = output_val
 
-        loss = loss
+        loss = loss**2
         loss.backward()
         self.encoder_optimizer.step()
         self.decoder_optimizer.step()
@@ -300,16 +300,17 @@ class EncoderDecoder:
         torch.save(self.decoder, './dec_last.pth')
     
     def load(self):
-        self.encoder = torch.load('./enc_init.pth')
-        self.decoder = torch.load('./dec_init.pth')
+        self.encoder = torch.load('./enc_best.pth')
+        self.decoder = torch.load('./dec_best.pth')
 
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     epochs = 10
+    shift = 0
     print('device:', device)
 
-    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, output_embedding_dim=10, hidden_size=500, tfr=0.8)
+    test_net = EncoderDecoder(device, (0,30), 5, 20, (0,1000), 0.1, output_embedding_dim=10, hidden_size=50, tfr=0.8)
     # test_net.load() # load in last parameter set
 
     train_loss = []
@@ -318,13 +319,13 @@ if __name__ == '__main__':
     start = time()
 
     for epoch in range(epochs):
-        dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (1960, 2016))
+        dsr = DatasetReader('dataset', 'Boulder Creek', '663', '06730200', 1, (2000, 2016))
         print('epoch:', epoch)
         for x, y in dsr:
             x = torch.from_numpy(x).to(device)
-            y = torch.from_numpy(y[0:]).to(device)
+            y = torch.from_numpy(y[shift:]).to(device)
             # lets offset the output by 75 points because it's not important (for boulder creek at least)
-            this_loss = test_net.train(x, y, 10)
+            this_loss = test_net.train(x, y, 5)
             train_loss.append(this_loss)
             # print(this_loss)
         print("prog:", 100.0*(epoch+1)/epochs)
@@ -341,9 +342,9 @@ if __name__ == '__main__':
     for x, y in dsr:
         x = torch.from_numpy(x).to(device)
         y = torch.from_numpy(y)
-        y_hat = test_net.run_idk(x, y[0:].shape[0])
+        y_hat = test_net.run_idk(x, y[shift:].shape[0])
         y_hat = y_hat.cpu()
         # print(y[75:], y_hat.numpy())
         plt.plot(np.arange(y.shape[0]), y, label='y')
-        plt.plot(np.arange(y_hat.shape[0]), y_hat.numpy(), label='y_hat')
+        plt.plot(np.arange(y_hat.shape[0])+shift, y_hat.numpy(), label='y_hat')
         plt.show()
