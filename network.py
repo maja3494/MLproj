@@ -288,7 +288,7 @@ class EncoderDecoder:
                     loss += self.criterion2(decoder_output[:,0,:],tes_val)
                 decoder_input = output_val
 
-        loss = loss**2
+        #loss = loss**2
         loss.backward()
         self.encoder_optimizer.step()
         self.decoder_optimizer.step()
@@ -299,18 +299,20 @@ class EncoderDecoder:
         torch.save(self.encoder, './enc_last.pth')
         torch.save(self.decoder, './dec_last.pth')
     
-    def load(self):
-        self.encoder = torch.load('./enc_best.pth')
-        self.decoder = torch.load('./dec_best.pth')
+    def load(self, device):
+        self.encoder = torch.load('./enc_init.pth', map_location=torch.device(device))
+        self.encoder.device = device
+        self.decoder = torch.load('./dec_init.pth', map_location=torch.device(device))
+        self.decoder.device = device
 
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    epochs = 10
+    epochs = 100
     print('device:', device)
 
-    test_net = EncoderDecoder(device, (0,15), 1, 20, (300,6000), 1/30, output_embedding_dim=10, hidden_size=500, tfr=0.8)
-    # test_net.load() # load in last parameter set
+    test_net = EncoderDecoder(device, (0,15), 1, 20, (-300,6300), 1/30, output_embedding_dim=20, hidden_size=500, tfr=0.8)
+    # test_net.load(device)  # load in last parameter set
 
     train_loss = []
 
@@ -347,3 +349,14 @@ if __name__ == '__main__':
         plt.plot(np.arange(y_hat.shape[0]), y_hat.numpy(), label='y_hat')
         plt.legend()
         plt.show()
+
+"""
+test_val_idk=decoder_output[0,0,:].cpu().detach().numpy()
+plt.plot(np.arange(test_val_idk.shape[0]), np.exp(test_val_idk), label='decoder_output')
+plt.plot(np.arange(tes_val.shape[1]), tes_val[0,:].numpy(), label='target_rescaled_tensor')
+plt.legend()
+plt.show()
+print(target_tensor.cpu().numpy(), target_rescaled_tensor.cpu().numpy()[:,0], target_rescaled_tensor.cpu().numpy()[di])
+print(self.decoder.network_output_tensors_to_numbers(torch.log(tes_val.cpu())).detach().numpy(), output_val.cpu().numpy(), target_tensor[di].cpu().numpy())
+
+"""
